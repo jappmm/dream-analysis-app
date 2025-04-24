@@ -1,0 +1,11 @@
+Estamos trabajando en una aplicación web llamada "Dream Analyzer" desarrollada en React. Es una herramienta para registrar y analizar sueños con estas características:
+
+- Frontend React con Chakra UI y Tailwind CSS para la interfaz
+- Datos almacenados en localStorage (simulando backend)
+- Contexto global para gestionar los sueños (DreamContext)
+- Utiliza hooks personalizados como useDreams
+- La estructura incluye componentes para visualizar sueños, análisis y estadísticas
+
+En nuestra última sesión, solucionamos un problema de carga infinita en el componente Analysis.js añadiendo un estado "fetched" para prevenir peticiones repetidas.
+
+Necesito ayuda con [tu nueva consulta aquí].

@@ -1,0 +1,13 @@
+# Configuración para Netlify
+
+# Comando de construcción y directorio de publicación
+[build]
+  base = "frontend/"    # Directorio base donde está el package.json
+  command = "npm run build" 
+  publish = "build"     # O "dist" dependiendo de cómo se configure su proceso de build
+
+# Configuración para SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
