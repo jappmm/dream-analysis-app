@@ -1,10 +1,10 @@
 # Configuración para Netlify
 
-# Comando de construcción y directorio de publicación
+# Comando de construcción para React
 [build]
-  base = "frontend/"    # Directorio base donde está el package.json
+  base = "frontend"
   command = "npm run build" 
-  publish = "build"     # O "dist" dependiendo de cómo se configure su proceso de build
+  publish = "build"
 
 # Configuración para SPA (Single Page Application)
 [[redirects]]
