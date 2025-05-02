@@ -1,122 +1,151 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Button,
-  FormControl,
-  FormLabel,
-  Input,
-  Heading,
-  Text,
-  useToast,
-  VStack,
+import React, { useState, useEffect } from 'react';
+import { 
+  Box, 
+  Button, 
+  FormControl, 
+  FormLabel, 
+  Input, 
+  VStack, 
+  Heading, 
+  Text, 
+  Link, 
+  useToast, 
+  Alert, 
+  AlertIcon 
 } from '@chakra-ui/react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useDreams } from '../contexts/DreamContext';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
-  const toast = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState(null);
+  
+  // Usamos las funciones de autenticación de Supabase a través del contexto
+  const { signIn, user } = useDreams();
   const navigate = useNavigate();
+  const toast = useToast();
+
+  // Redireccionar si ya está autenticado
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!email || !password) {
-      toast({
-        title: 'Error',
-        description: 'Por favor ingresa email y contraseña',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
+    // Validación básica
+    if (!email.trim() || !password.trim()) {
+      setMessage({
+        type: 'error',
+        text: 'Por favor, completa todos los campos'
       });
       return;
     }
-    
-    setIsLoading(true);
+
+    setIsSubmitting(true);
+    setMessage(null);
     
     try {
-      // Datos fijos para desarrollo
-      // En producción aquí se conectaría al backend
-      localStorage.setItem('dream_analysis_user', JSON.stringify({
-        id: 'user_123',
-        name: email.split('@')[0],
-        email: email,
-        createdAt: new Date().toISOString()
-      }));
-      localStorage.setItem('dream_analysis_token', 'fake_token_123');
+      // Llamamos a la función de inicio de sesión de Supabase
+      const result = await signIn(email, password);
       
-      toast({
-        title: 'Sesión iniciada',
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-      });
-      
-      // Simular un pequeño retraso
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1000);
-      
+      if (result.success) {
+        toast({
+          title: 'Inicio de sesión exitoso',
+          description: '¡Bienvenido de nuevo!',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        navigate('/');
+      } else {
+        setMessage({
+          type: 'error',
+          text: result.error || 'Error al iniciar sesión. Verifica tus credenciales.'
+        });
+      }
     } catch (error) {
-      console.error('Error al iniciar sesión:', error);
-      toast({
-        title: 'Error al iniciar sesión',
-        description: 'Hubo un problema. Intenta nuevamente.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
+      console.error('Error en inicio de sesión:', error);
+      setMessage({
+        type: 'error',
+        text: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.'
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Box maxW="md" mx="auto" mt={8} p={6} borderWidth="1px" borderRadius="lg">
-      <Heading mb={6} textAlign="center">Iniciar Sesión</Heading>
+    <Box
+      maxW="450px"
+      mx="auto"
+      mt="100px" 
+      p={8}
+      borderRadius="lg"
+      bg="white"
+      boxShadow="lg"
+    >
+      <Heading size="xl" mb={6} textAlign="center">Iniciar Sesión</Heading>
+      
+      {message && (
+        <Alert status={message.type} mb={6} borderRadius="md">
+          <AlertIcon />
+          {message.text}
+        </Alert>
+      )}
       
       <form onSubmit={handleSubmit}>
-        <VStack spacing={4}>
+        <VStack spacing={5}>
           <FormControl isRequired>
-            <FormLabel>Correo electrónico</FormLabel>
-            <Input 
-              type="email" 
+            <FormLabel>Correo Electrónico</FormLabel>
+            <Input
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
+              placeholder="tucorreo@ejemplo.com"
+              size="lg"
             />
           </FormControl>
           
           <FormControl isRequired>
             <FormLabel>Contraseña</FormLabel>
-            <Input 
-              type="password" 
+            <Input
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="********"
+              placeholder="Tu contraseña"
+              size="lg"
             />
           </FormControl>
           
-          <Button 
-            type="submit" 
-            colorScheme="blue" 
-            width="full" 
+          <Button
+            type="submit"
+            colorScheme="blue"
+            size="lg"
+            width="full"
+            isLoading={isSubmitting}
+            loadingText="Iniciando sesión"
             mt={4}
-            isLoading={isLoading}
           >
-            Iniciar sesión
+            Iniciar Sesión
           </Button>
         </VStack>
       </form>
       
-      <Text mt={4} textAlign="center">
-        ¿No tienes cuenta? {' '}
-        <RouterLink to="/register" style={{color: "blue"}}>
-          Regístrate
-        </RouterLink>
+      <Text mt={6} textAlign="center">
+        ¿No tienes una cuenta?{' '}
+        <Link 
+          color="blue.500" 
+          fontWeight="semibold"
+          onClick={() => navigate('/register')}
+          _hover={{ textDecoration: 'underline', cursor: 'pointer' }}
+        >
+          Regístrate aquí
+        </Link>
       </Text>
     </Box>
   );

@@ -10,19 +10,19 @@ import About from './pages/About';
 import Insights from './pages/Insights';
 import NotFound from './pages/NotFound';
 import RegisterDream from './pages/RegisterDream';
-import DreamJournal from './pages/DreamJournal';  // Importar el componente
+import DreamJournal from './pages/DreamJournal';
+import { useDreams } from './contexts/DreamContext';  // Añadimos esta importación
 
-// Componente para rutas protegidas simplificado
+// Componente para rutas protegidas usando Supabase
 const PrivateRoute = ({ children }) => {
-  // Verificar directamente si existe un token en localStorage
-  const isAuthenticated = localStorage.getItem('dream_analysis_token') !== null;
-
-  if (!isAuthenticated) {
-    // Si no hay token, redirigir a login
+  // Ahora usamos el usuario de Supabase desde nuestro contexto
+  const { user } = useDreams();
+  
+  if (!user) {
+    // Si no hay usuario, redirigir a login
     return <Navigate to="/login" replace />;
   }
-
-  // Si hay token, mostrar el contenido
+  // Si hay usuario, mostrar el contenido
   return children;
 };
 
@@ -47,7 +47,7 @@ const AppRouter = () => {
         </PrivateRoute>
       } />
       
-      <Route path="/history" element={  // Añadir la ruta history
+      <Route path="/history" element={
         <PrivateRoute>
           <DreamJournal />
         </PrivateRoute>

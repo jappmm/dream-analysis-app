@@ -1,200 +1,279 @@
-// src/contexts/DreamContext.js
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { supabase } from '../services/supabaseClient'; // Importamos el cliente de Supabase
 
 // Crear el contexto
-const DreamContext = createContext();
+export const DreamContext = createContext();
 
-// Hook personalizado para usar el contexto
-export const useDreams = () => {
-  const context = useContext(DreamContext);
-  if (!context) {
-    throw new Error('useDreams debe usarse dentro de un DreamProvider');
-  }
-  return context;
-};
-
-// Proveedor del contexto
+// Proveedor del contexto que maneja los sueños
 export const DreamProvider = ({ children }) => {
+  // Estado para almacenar los sueños
   const [dreams, setDreams] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // Estado para manejar el estado de carga
+  const [loading, setLoading] = useState(true);
+  // Estado para el usuario actual
+  const [user, setUser] = useState(null);
 
-  // Cargar sueños del localStorage al iniciar
+  // Verificar y establecer el usuario actual
   useEffect(() => {
-    const storedDreams = localStorage.getItem('dreams');
-    if (storedDreams) {
-      setDreams(JSON.parse(storedDreams));
-    }
+    // Obtener la sesión actual
+    const session = supabase.auth.getSession();
+    setUser(session?.user || null);
+
+    // Suscribirse a cambios de autenticación
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => {
+      // Limpiar suscripción
+      if (authListener?.unsubscribe) authListener.unsubscribe();
+    };
   }, []);
 
-  // Función para obtener todos los sueños
-  const getDreams = async (userId, limit = 10) => {
-    setLoading(true);
-    try {
-      // Simular delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Filtrar por usuario
-      const storedDreams = JSON.parse(localStorage.getItem('dreams') || '[]');
-      const userDreams = storedDreams
-        .filter(dream => dream.userId === userId)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, limit);
-      
-      return userDreams;
-    } catch (err) {
-      console.error('Error al obtener sueños:', err);
-      setError('Error al cargar los sueños');
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Función para obtener un sueño específico
-  const getDreamById = async (dreamId) => {
-    setLoading(true);
-    try {
-      // Simular delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      console.log('Looking for dream with ID:', dreamId);
-      
-      const storedDreams = JSON.parse(localStorage.getItem('dreams') || '[]');
-      const dream = storedDreams.find(dream => dream.id === dreamId);
-      
-      console.log('Available dreams:', storedDreams);
-      console.log('Found dream:', dream);
-      
-      return dream || null;
-    } catch (err) {
-      console.error('Error al obtener sueño:', err);
-      setError('Error al cargar el sueño');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Función para crear un nuevo sueño
-  const createDream = async (dreamData) => {
-    setLoading(true);
-    try {
-      // Simular delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Crear nuevo sueño con ID único
-      const newDream = {
-        ...dreamData,
-        id: 'dream_' + Date.now(),
-        createdAt: new Date().toISOString(),
-        status: 'pending'
-      };
-      
-      // Obtener sueños existentes
-      const storedDreams = JSON.parse(localStorage.getItem('dreams') || '[]');
-      
-      // Añadir el nuevo sueño
-      const updatedDreams = [newDream, ...storedDreams];
-      
-      // Guardar en localStorage
-      localStorage.setItem('dreams', JSON.stringify(updatedDreams));
-      
-      // Actualizar estado
-      setDreams(updatedDreams);
-      
-      // Simular análisis automático después de 2 segundos
-      setTimeout(() => {
-        const dreamsInStorage = JSON.parse(localStorage.getItem('dreams') || '[]');
-        const dreamIndex = dreamsInStorage.findIndex(d => d.id === newDream.id);
-        
-        if (dreamIndex !== -1) {
-          dreamsInStorage[dreamIndex] = {
-            ...dreamsInStorage[dreamIndex],
-            status: 'analyzed',
-            analysis: {
-              summary: "Este sueño refleja aspectos de tu subconsciente relacionados con tus experiencias recientes.",
-              symbols: [
-                { name: "Símbolo 1", meaning: "Significado 1", context: "Contexto personal" },
-                { name: "Símbolo 2", meaning: "Significado 2", context: "Contexto personal" }
-              ],
-              patterns: [
-                { description: "Patrón 1", significance: "Significado del patrón 1" },
-                { description: "Patrón 2", significance: "Significado del patrón 2" }
-              ],
-              reflectionQuestions: [
-                "¿Cómo te sentiste durante el sueño?",
-                "¿Reconoces estos símbolos en tu vida diaria?"
-              ],
-              recommendations: [
-                "Recomendación 1 basada en el análisis",
-                "Recomendación 2 basada en el análisis"
-              ]
-            }
-          };
-          
-          localStorage.setItem('dreams', JSON.stringify(dreamsInStorage));
-          setDreams(dreamsInStorage);
-        }
-      }, 2000);
-      
-      return newDream;
-    } catch (err) {
-      console.error('Error al crear sueño:', err);
-      setError('Error al guardar el sueño');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Función para símbolos
-  const getSymbols = async () => {
-    // Simular delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Datos de ejemplo
-    return [
-      {
-        _id: "Agua",
-        count: 7,
-        interpretations: [
-          "Representa emociones y el inconsciente",
-          "Agua clara puede simbolizar claridad mental",
-          "Agua turbia puede indicar confusión emocional"
-        ]
-      },
-      {
-        _id: "Volar",
-        count: 5,
-        interpretations: [
-          "Simboliza libertad y trascendencia",
-          "Puede indicar deseo de escapar de limitaciones",
-          "A veces representa perspectiva y visión amplia"
-        ]
-      },
-      {
-        _id: "Caída",
-        count: 4,
-        interpretations: [
-          "Asociado con miedo al fracaso",
-          "Puede reflejar ansiedad o inseguridad",
-          "También puede simbolizar liberación"
-        ]
+  // Cargar sueños desde Supabase cuando cambia el usuario
+  useEffect(() => {
+    const loadDreams = async () => {
+      if (!user) {
+        setDreams([]);
+        setLoading(false);
+        return;
       }
-    ];
+
+      try {
+        setLoading(true);
+        
+        // Consultar sueños del usuario actual
+        const { data, error } = await supabase
+          .from('dreams')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        
+        setDreams(data || []);
+      } catch (error) {
+        console.error('Error cargando sueños:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDreams();
+  }, [user]);
+
+  // Añadir un nuevo sueño
+  const addDream = async (newDream) => {
+    if (!user) return null;
+
+    try {
+      // Preparar el sueño para guardar
+      const dreamWithMetadata = {
+        user_id: user.id,
+        title: newDream.title,
+        content: newDream.content,
+        created_at: new Date().toISOString(),
+        // Solo añadir el análisis si existe
+        ...(newDream.analysis && { analysis: newDream.analysis })
+      };
+
+      // Insertar en Supabase
+      const { data, error } = await supabase
+        .from('dreams')
+        .insert([dreamWithMetadata])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Actualizar estado local
+      setDreams(prevDreams => [data, ...prevDreams]);
+      
+      return data.id; // Devolver ID para redirecciones
+    } catch (error) {
+      console.error('Error añadiendo sueño:', error);
+      return null;
+    }
   };
 
-  // Valores disponibles en el contexto
+  // Actualizar un sueño existente
+  const updateDream = async (id, updatedDream) => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('dreams')
+        .update(updatedDream)
+        .eq('id', id)
+        .eq('user_id', user.id); // Asegurar que el sueño pertenece al usuario
+
+      if (error) throw error;
+
+      // Actualizar estado local
+      setDreams(prevDreams => 
+        prevDreams.map(dream => 
+          dream.id === id ? { ...dream, ...updatedDream } : dream
+        )
+      );
+      
+      return true;
+    } catch (error) {
+      console.error('Error actualizando sueño:', error);
+      return false;
+    }
+  };
+
+  // Eliminar un sueño
+  const deleteDream = async (id) => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from('dreams')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id); // Asegurar que el sueño pertenece al usuario
+
+      if (error) throw error;
+
+      // Actualizar estado local
+      setDreams(prevDreams => prevDreams.filter(dream => dream.id !== id));
+      
+      return true;
+    } catch (error) {
+      console.error('Error eliminando sueño:', error);
+      return false;
+    }
+  };
+
+  // Obtener un sueño específico
+  const getDream = (id) => {
+    return dreams.find(dream => dream.id === id);
+  };
+
+  // Exportar todos los sueños como JSON
+  const exportDreams = () => {
+    if (dreams.length === 0) return;
+    
+    const dataStr = JSON.stringify(dreams, null, 2);
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+    
+    const exportFileDefaultName = `dream_data_${new Date().toLocaleDateString()}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
+  // Importar sueños desde un archivo JSON
+  const importDreams = async (jsonData) => {
+    if (!user) return { success: false, message: 'Debe iniciar sesión para importar datos' };
+
+    try {
+      const parsedData = JSON.parse(jsonData);
+      
+      if (!Array.isArray(parsedData)) {
+        return { success: false, message: 'El formato del archivo no es válido' };
+      }
+
+      // Preparar los sueños para importar con el ID de usuario correcto
+      const dreamsToImport = parsedData.map(dream => ({
+        ...dream,
+        user_id: user.id,
+        id: undefined // Permitir que Supabase genere nuevos IDs
+      }));
+
+      // Insertar en Supabase
+      const { data, error } = await supabase
+        .from('dreams')
+        .insert(dreamsToImport)
+        .select();
+
+      if (error) throw error;
+
+      // Recargar los sueños
+      const { data: allDreams, error: loadError } = await supabase
+        .from('dreams')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (loadError) throw loadError;
+      
+      setDreams(allDreams || []);
+      
+      return { 
+        success: true, 
+        message: `${data.length} sueños importados correctamente` 
+      };
+    } catch (error) {
+      console.error('Error importando sueños:', error);
+      return { 
+        success: false, 
+        message: 'Error al procesar el archivo: ' + error.message 
+      };
+    }
+  };
+
+  // Funciones de autenticación
+  const signUp = async (email, password) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error en registro:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const signIn = async (email, password) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error en inicio de sesión:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Valores y funciones que se exponen al contexto
   const value = {
     dreams,
     loading,
-    error,
-    getDreams,
-    getDreamById,
-    createDream,
-    getSymbols,
-    refreshDreams: () => getDreams()
+    user,
+    addDream,
+    updateDream,
+    deleteDream,
+    getDream,
+    exportDreams,
+    importDreams,
+    signUp,
+    signIn,
+    signOut
   };
 
   return (
@@ -204,4 +283,11 @@ export const DreamProvider = ({ children }) => {
   );
 };
 
-export default DreamContext;
+// Hook personalizado para usar el contexto de los sueños
+export const useDreams = () => {
+  const context = useContext(DreamContext);
+  if (context === undefined) {
+    throw new Error('useDreams debe ser usado dentro de un DreamProvider');
+  }
+  return context;
+};
