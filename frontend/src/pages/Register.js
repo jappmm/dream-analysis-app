@@ -11,10 +11,19 @@ import {
   Link, 
   useToast, 
   Alert, 
-  AlertIcon 
+  AlertIcon,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton
 } from '@chakra-ui/react';
 import { useDreams } from '../contexts/DreamContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient'; // Importamos directamente supabase
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -22,9 +31,13 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
+  const [resetEmail, setResetEmail] = useState('');
   
-  // Usamos las funciones de autenticación de Supabase a través del contexto
-  const { signUp, user } = useDreams();
+  // Modal para recuperación de contraseña
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  
+  // Usamos las funciones de autenticación tanto del contexto como directamente
+  const { user } = useDreams();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -68,42 +81,92 @@ const Register = () => {
     setMessage(null);
     
     try {
-      // Llamamos a la función de registro de Supabase
-      const result = await signUp(email, password);
+      // Usamos directamente la API de Supabase para el registro
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
       
-      if (result.success) {
-        toast({
-          title: 'Registro exitoso',
-          description: 'Se ha enviado un correo de confirmación a tu dirección de email.',
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
-        
-        // Mostrar mensaje de confirmación
+      if (error) throw error;
+      
+      toast({
+        title: 'Registro exitoso',
+        description: 'Tu cuenta ha sido creada correctamente.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      // Mostrar mensaje de confirmación
+      setMessage({
+        type: 'success',
+        text: 'Cuenta creada correctamente. Ya puedes iniciar sesión con tus credenciales.'
+      });
+      
+      // Redireccionar al login después de un breve retraso
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Error en registro:', error);
+      
+      // Mensajes de error más descriptivos según el tipo de error
+      if (error.message.includes('email')) {
         setMessage({
-          type: 'success',
-          text: 'Cuenta creada correctamente. Por favor, revisa tu email para confirmar tu cuenta.'
+          type: 'error',
+          text: 'El correo electrónico ya está registrado o no es válido.'
         });
-        
-        // Redireccionar al login después de un breve retraso
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
       } else {
         setMessage({
           type: 'error',
-          text: result.error || 'Error al crear la cuenta.'
+          text: `Error: ${error.message || 'Ocurrió un error inesperado. Por favor, intenta de nuevo.'}`
         });
       }
-    } catch (error) {
-      console.error('Error en registro:', error);
-      setMessage({
-        type: 'error',
-        text: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.'
-      });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Función para manejar la recuperación de contraseña
+  const handlePasswordReset = async () => {
+    if (!resetEmail.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Por favor, introduce tu correo electrónico',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Correo enviado',
+        description: 'Se ha enviado un enlace para restablecer tu contraseña.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      onClose();
+      
+    } catch (error) {
+      console.error('Error al restablecer contraseña:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo enviar el correo de recuperación',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
@@ -186,6 +249,43 @@ const Register = () => {
           Inicia sesión aquí
         </Link>
       </Text>
+      
+      <Text mt={2} textAlign="center">
+        <Link 
+          color="blue.500" 
+          fontWeight="semibold"
+          onClick={onOpen}
+          _hover={{ textDecoration: 'underline', cursor: 'pointer' }}
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </Text>
+      
+      {/* Modal para recuperación de contraseña */}
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Recuperar contraseña</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <FormControl>
+              <FormLabel>Correo Electrónico</FormLabel>
+              <Input 
+                placeholder="Introduce tu correo electrónico" 
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+              />
+            </FormControl>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handlePasswordReset}>
+              Enviar
+            </Button>
+            <Button onClick={onClose}>Cancelar</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

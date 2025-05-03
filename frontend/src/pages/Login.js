@@ -11,19 +11,32 @@ import {
   Link, 
   useToast, 
   Alert, 
-  AlertIcon 
+  AlertIcon,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton
 } from '@chakra-ui/react';
 import { useDreams } from '../contexts/DreamContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient'; // Importamos directamente supabase
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
+  const [resetEmail, setResetEmail] = useState('');
   
-  // Usamos las funciones de autenticación de Supabase a través del contexto
-  const { signIn, user } = useDreams();
+  // Modal para recuperación de contraseña
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  
+  // Usamos las funciones de autenticación tanto del contexto como directamente
+  const { user } = useDreams();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -50,32 +63,84 @@ const Login = () => {
     setMessage(null);
     
     try {
-      // Llamamos a la función de inicio de sesión de Supabase
-      const result = await signIn(email, password);
+      // Usamos directamente la API de Supabase para el inicio de sesión
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      if (result.success) {
-        toast({
-          title: 'Inicio de sesión exitoso',
-          description: '¡Bienvenido de nuevo!',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
+      if (error) throw error;
+      
+      toast({
+        title: 'Inicio de sesión exitoso',
+        description: '¡Bienvenido de nuevo!',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      
+      // Redireccionar al dashboard
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Error en inicio de sesión:', error);
+      
+      // Mensajes de error más descriptivos según el tipo de error
+      if (error.message.includes('credentials') || error.message.includes('auth')) {
+        setMessage({
+          type: 'error',
+          text: 'Credenciales incorrectas. Por favor, verifica tu correo y contraseña.'
         });
-        navigate('/');
       } else {
         setMessage({
           type: 'error',
-          text: result.error || 'Error al iniciar sesión. Verifica tus credenciales.'
+          text: `Error: ${error.message || 'Ocurrió un error inesperado. Por favor, intenta de nuevo.'}`
         });
       }
-    } catch (error) {
-      console.error('Error en inicio de sesión:', error);
-      setMessage({
-        type: 'error',
-        text: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.'
-      });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Función para manejar la recuperación de contraseña
+  const handlePasswordReset = async () => {
+    if (!resetEmail.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Por favor, introduce tu correo electrónico',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Correo enviado',
+        description: 'Se ha enviado un enlace para restablecer tu contraseña.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      onClose();
+      
+    } catch (error) {
+      console.error('Error al restablecer contraseña:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo enviar el correo de recuperación',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 
@@ -147,6 +212,43 @@ const Login = () => {
           Regístrate aquí
         </Link>
       </Text>
+      
+      <Text mt={2} textAlign="center">
+        <Link 
+          color="blue.500" 
+          fontWeight="semibold"
+          onClick={onOpen}
+          _hover={{ textDecoration: 'underline', cursor: 'pointer' }}
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </Text>
+      
+      {/* Modal para recuperación de contraseña */}
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Recuperar contraseña</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <FormControl>
+              <FormLabel>Correo Electrónico</FormLabel>
+              <Input 
+                placeholder="Introduce tu correo electrónico" 
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+              />
+            </FormControl>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={handlePasswordReset}>
+              Enviar
+            </Button>
+            <Button onClick={onClose}>Cancelar</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };
