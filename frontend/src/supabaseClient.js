@@ -4,12 +4,17 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://lqcjprngnslazjynhrod.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxY2pwcm5nbnNsYXpqeW5ocm9kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMDI0MTAsImV4cCI6MjA2MTc3ODQxMH0.wn-WbbvTAZaeuxXepBHyS8E4gsDbh_54BJcrgkO15XE';
 
+// URL para redirecciones (el dominio de producción)
+const siteUrl = 'https://vocal-speculoos-3d7513.netlify.app';
+
 // Opciones adicionales para mejorar la conectividad
 const options = {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    // Configuración para redirecciones, usando la URL de producción
+    redirectTo: `${siteUrl}/reset-password`
   }
 };
 
@@ -25,8 +30,26 @@ export const testConnection = async () => {
     }
     console.log('Conexión a Supabase exitosa');
     return true;
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Error inesperado conectando a Supabase:', err);
     return false;
   }
+};
+
+// Función para manejar la recuperación de contraseña con URL fija de producción
+export const resetPassword = async (email) => {
+  return await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/reset-password`,
+  });
+};
+
+// Función para verificar la sesión actual
+export const getCurrentUser = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error('Error obteniendo usuario actual:', error);
+    return null;
+  }
+  return data.user;
 };
