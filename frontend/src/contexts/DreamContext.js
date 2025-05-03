@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
 // Crear el contexto
 const DreamContext = createContext();
@@ -84,6 +84,15 @@ export const DreamProvider = ({ children }) => {
       {children}
     </DreamContext.Provider>
   );
+};
+
+// Hook personalizado para usar el contexto
+export const useDreams = () => {
+  const context = useContext(DreamContext);
+  if (!context) {
+    throw new Error('useDreams debe ser usado dentro de un DreamProvider');
+  }
+  return context;
 };
 
 // Exportar el contexto como default export
