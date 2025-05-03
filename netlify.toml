@@ -1,12 +1,12 @@
-# Configuración para Netlify
-
-# Comando de construcción para React
 [build]
   base = "frontend"
-  command = "npm run build" 
+  command = "npm run build"
   publish = "build"
 
-# Configuración para SPA (Single Page Application)
+[build.environment]
+  NODE_VERSION = "18.17.0"
+  NPM_VERSION = "9.6.7"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
