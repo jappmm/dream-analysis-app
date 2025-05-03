@@ -12,44 +12,39 @@ const options = {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    // Configuración para redirecciones, usando la URL de producción
-    redirectTo: `${siteUrl}/reset-password`
+    detectSessionInUrl: true
   }
 };
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, options);
 
 // Función para verificar la conexión
-export const testConnection = async () => {
-  try {
-    const { data, error } = await supabase.from('test').select('*').limit(1);
-    if (error) {
-      console.error('Error conectando con Supabase:', error);
-      return false;
+export const testConnection = () => {
+  return new Promise(async (resolve) => {
+    try {
+      const { data, error } = await supabase.from('test').select('*').limit(1);
+      if (error) {
+        console.error('Error conectando con Supabase:', error);
+        resolve(false);
+      } else {
+        console.log('Conexión a Supabase exitosa');
+        resolve(true);
+      }
+    } catch (err) {
+      console.error('Error inesperado conectando a Supabase:', err);
+      resolve(false);
     }
-    console.log('Conexión a Supabase exitosa');
-    return true;
-  }
-  catch (err) {
-    console.error('Error inesperado conectando a Supabase:', err);
-    return false;
-  }
+  });
 };
 
 // Función para manejar la recuperación de contraseña con URL fija de producción
-export const resetPassword = async (email) => {
-  return await supabase.auth.resetPasswordForEmail(email, {
+export const resetPassword = (email) => {
+  return supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/reset-password`,
   });
 };
 
 // Función para verificar la sesión actual
-export const getCurrentUser = async () => {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) {
-    console.error('Error obteniendo usuario actual:', error);
-    return null;
-  }
-  return data.user;
+export const getCurrentUser = () => {
+  return supabase.auth.getUser();
 };
