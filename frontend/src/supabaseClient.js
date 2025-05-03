@@ -1,50 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Valores directos en lugar de variables de entorno
+// Valores directos para asegurar que funcione en cualquier entorno
 const supabaseUrl = 'https://lqcjprngnslazjynhrod.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxY2pwcm5nbnNsYXpqeW5ocm9kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYyMDI0MTAsImV4cCI6MjA2MTc3ODQxMH0.wn-WbbvTAZaeuxXepBHyS8E4gsDbh_54BJcrgkO15XE';
 
-// URL para redirecciones (el dominio de producción)
-const siteUrl = 'https://vocal-speculoos-3d7513.netlify.app';
+// Crear y exportar el cliente de Supabase
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Opciones adicionales para mejorar la conectividad
-const options = {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-};
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, options);
-
-// Función para verificar la conexión
-export const testConnection = () => {
-  return new Promise(async (resolve) => {
-    try {
-      const { data, error } = await supabase.from('test').select('*').limit(1);
-      if (error) {
-        console.error('Error conectando con Supabase:', error);
-        resolve(false);
-      } else {
-        console.log('Conexión a Supabase exitosa');
-        resolve(true);
-      }
-    } catch (err) {
-      console.error('Error inesperado conectando a Supabase:', err);
-      resolve(false);
-    }
-  });
-};
-
-// Función para manejar la recuperación de contraseña con URL fija de producción
+// Función simple para recuperación de contraseña
 export const resetPassword = (email) => {
+  const productionUrl = 'https://vocal-speculoos-3d7513.netlify.app';
   return supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/reset-password`,
+    redirectTo: `${productionUrl}/reset-password`,
   });
-};
-
-// Función para verificar la sesión actual
-export const getCurrentUser = () => {
-  return supabase.auth.getUser();
 };
