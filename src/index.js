@@ -1,20 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// Eliminar o comentar la línea: import './index.css';
-import App from './App';
+// Sin importación de CSS que podría causar problemas
 
-console.log("Iniciando aplicación React");
-
-try {
-  const root = ReactDOM.createRoot(document.getElementById('root'));
-  console.log("Root element found:", document.getElementById('root'));
-  
-  root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
+const App = () => {
+  return (
+    <div style={{padding: "20px", fontFamily: "Arial"}}>
+      <h1>Dream Analysis App</h1>
+      <p>Esta es una versión de prueba para verificar que la aplicación funciona.</p>
+    </div>
   );
-  console.log("Render completado");
-} catch (error) {
-  console.error("Error al renderizar la aplicación:", error);
+};
+
+const root = document.getElementById('root');
+if (root) {
+  ReactDOM.createRoot(root).render(<App />);
+} else {
+  console.error("No se encontró el elemento root");
 }
