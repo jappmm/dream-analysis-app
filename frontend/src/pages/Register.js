@@ -23,7 +23,7 @@ import {
 } from '@chakra-ui/react';
 import { useDreams } from '../contexts/DreamContext';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../supabaseClient'; // Importamos directamente supabase
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -82,12 +82,12 @@ const Register = () => {
     
     try {
       // Usamos directamente la API de Supabase para el registro
-      const result = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
       
-      if (result.error) throw result.error;
+      if (error) throw error;
       
       toast({
         title: 'Registro exitoso',
@@ -112,7 +112,7 @@ const Register = () => {
       console.error('Error en registro:', error);
       
       // Mensajes de error más descriptivos según el tipo de error
-      if (error.message && error.message.includes('email')) {
+      if (error.message.includes('email')) {
         setMessage({
           type: 'error',
           text: 'El correo electrónico ya está registrado o no es válido.'
@@ -142,11 +142,11 @@ const Register = () => {
     }
     
     try {
-      const result = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: 'https://vocal-speculoos-3d7513.netlify.app/reset-password',
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: window.location.origin + '/reset-password',
       });
       
-      if (result.error) throw result.error;
+      if (error) throw error;
       
       toast({
         title: 'Correo enviado',
