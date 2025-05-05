@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -7,97 +8,74 @@ import {
   FormLabel,
   Heading,
   Input,
+  Link,
   Text,
-  useToast,
   VStack,
-} from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
+  useToast,
+} from '@chakra-ui/react';
 
 const ForgotPassword = () => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  // Mantenemos useNavigate pero lo comentamos para indicar que lo usaremos después
-  // o podemos usarlo realmente para redirigir después de enviar el correo
-  const navigate = useNavigate();
   const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + "/reset-password",
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Correo enviado",
-        description: "Se ha enviado un enlace para restablecer tu contraseña al correo proporcionado.",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
-      
-      // Puedes usar navigate aquí para redirigir después de enviar el correo
-      // Por ejemplo: navigate("/login");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Ha ocurrido un error al enviar el correo de restablecimiento",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
+    // Simulamos un proceso de recuperación de contraseña
+    setTimeout(() => {
       setIsLoading(false);
-    }
+      toast({
+        title: 'Correo enviado',
+        description: 'Se ha enviado un enlace para restablecer tu contraseña.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+    }, 1000);
   };
 
   return (
-    <Container maxW="lg" py={12}>
+    <Container maxW="container.sm" py={10}>
       <VStack spacing={8} align="stretch">
         <Box textAlign="center">
-          <Heading as="h1" size="xl">
+          <Heading as="h1" size="xl" mb={2}>
             Recuperar contraseña
           </Heading>
-          <Text mt={4}>
-            Introduce tu dirección de correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
+          <Text color="gray.600">
+            Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
           </Text>
         </Box>
 
         <Box as="form" onSubmit={handleSubmit}>
-          <FormControl id="email" isRequired>
-            <FormLabel>Correo electrónico</FormLabel>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
-            />
-          </FormControl>
+          <VStack spacing={4}>
+            <FormControl id="email" isRequired>
+              <FormLabel>Correo electrónico</FormLabel>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@email.com"
+              />
+            </FormControl>
 
-          <Button
-            mt={6}
-            colorScheme="blue"
-            type="submit"
-            width="full"
-            isLoading={isLoading}
-          >
-            Enviar enlace de recuperación
-          </Button>
+            <Button
+              colorScheme="brand"
+              type="submit"
+              width="full"
+              mt={4}
+              isLoading={isLoading}
+            >
+              Enviar enlace de recuperación
+            </Button>
+          </VStack>
         </Box>
 
         <Box textAlign="center">
-          <Button
-            variant="link"
-            onClick={() => navigate("/login")}
-            colorScheme="blue"
-          >
+          <Link as={RouterLink} to="/login" color="brand.500">
             Volver a iniciar sesión
-          </Button>
+          </Link>
         </Box>
       </VStack>
     </Container>

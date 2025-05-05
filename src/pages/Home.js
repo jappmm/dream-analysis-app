@@ -1,20 +1,50 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Container,
+  Heading,
+  Text,
+  VStack,
+  HStack,
+  Link,
+} from '@chakra-ui/react';
 
 const Home = () => {
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Dream Analysis App</h1>
-      <p>Bienvenido a la aplicación de análisis de sueños.</p>
-      <div style={{ marginTop: '20px' }}>
-        <Link to="/login" style={{ marginRight: '10px', color: 'blue', textDecoration: 'underline' }}>
-          Iniciar sesión
-        </Link>
-        <Link to="/register" style={{ color: 'blue', textDecoration: 'underline' }}>
-          Registrarse
-        </Link>
-      </div>
-    </div>
+    <Container maxW="container.md" py={10}>
+      <VStack spacing={8} align="stretch">
+        <Box textAlign="center">
+          <Heading as="h1" size="2xl" mb={4}>
+            Dream Analysis App
+          </Heading>
+          <Text fontSize="xl">
+            Bienvenido a la aplicación de análisis de sueños.
+          </Text>
+        </Box>
+
+        <HStack spacing={4} justify="center">
+          <Button
+            as={RouterLink}
+            to="/login"
+            colorScheme="brand"
+            size="lg"
+          >
+            Iniciar sesión
+          </Button>
+          <Button
+            as={RouterLink}
+            to="/register"
+            colorScheme="brand"
+            variant="outline"
+            size="lg"
+          >
+            Registrarse
+          </Button>
+        </HStack>
+      </VStack>
+    </Container>
   );
 };
 
