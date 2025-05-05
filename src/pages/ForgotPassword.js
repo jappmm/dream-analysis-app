@@ -1,93 +1,105 @@
-// src/pages/ForgotPassword.js
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  Box, Button, Container, FormControl, FormLabel, Input,
-  Stack, Heading, Text, useColorModeValue, FormErrorMessage, Alert, AlertIcon, AlertDescription
-} from '@chakra-ui/react';
-import { resetPassword } from '../services/supabaseClient'; // 👈 usamos la función correcta
-import { useNavigate } from 'react-router-dom';
+  Box,
+  Button,
+  Container,
+  FormControl,
+  FormLabel,
+  Heading,
+  Input,
+  Text,
+  useToast,
+  VStack,
+} from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 
 const ForgotPassword = () => {
-  const [email, setEmail] = useState('');
-  const [formError, setFormError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  // Mantenemos useNavigate pero lo comentamos para indicar que lo usaremos después
+  // o podemos usarlo realmente para redirigir después de enviar el correo
   const navigate = useNavigate();
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError('');
-    setSuccessMessage('');
-
-    if (!email.trim()) {
-      setFormError('Por favor, introduce un correo válido.');
-      return;
-    }
+    setIsLoading(true);
 
     try {
-      setLoading(true);
-      await resetPassword(email);
-      setSuccessMessage('Te hemos enviado un correo para restablecer tu contraseña.');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + "/reset-password",
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Correo enviado",
+        description: "Se ha enviado un enlace para restablecer tu contraseña al correo proporcionado.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      // Puedes usar navigate aquí para redirigir después de enviar el correo
+      // Por ejemplo: navigate("/login");
     } catch (error) {
-      setFormError(error.message || 'Error al solicitar el restablecimiento de contraseña.');
+      toast({
+        title: "Error",
+        description: error.message || "Ha ocurrido un error al enviar el correo de restablecimiento",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <Container maxW="md" py={12}>
-      <Stack spacing={8}>
-        <Stack textAlign="center">
-          <Heading>¿Olvidaste tu contraseña?</Heading>
-          <Text color={textColor}>
-            Introduce tu correo electrónico y te enviaremos un enlace para restablecerla.
+    <Container maxW="lg" py={12}>
+      <VStack spacing={8} align="stretch">
+        <Box textAlign="center">
+          <Heading as="h1" size="xl">
+            Recuperar contraseña
+          </Heading>
+          <Text mt={4}>
+            Introduce tu dirección de correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
           </Text>
-        </Stack>
-
-        {formError && (
-          <Alert status="error" borderRadius="md">
-            <AlertIcon />
-            <AlertDescription>{formError}</AlertDescription>
-          </Alert>
-        )}
-
-        {successMessage && (
-          <Alert status="success" borderRadius="md">
-            <AlertIcon />
-            <AlertDescription>{successMessage}</AlertDescription>
-          </Alert>
-        )}
-
-        <Box p={8} bg={cardBg} rounded="lg" shadow="md">
-          <form onSubmit={handleSubmit}>
-            <Stack spacing={4}>
-              <FormControl isInvalid={!!formError}>
-                <FormLabel>Correo electrónico</FormLabel>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@correo.com"
-                />
-                <FormErrorMessage>{formError}</FormErrorMessage>
-              </FormControl>
-
-              <Button
-                type="submit"
-                colorScheme="blue"
-                isLoading={loading}
-                loadingText="Enviando"
-              >
-                Enviar enlace
-              </Button>
-            </Stack>
-          </form>
         </Box>
-      </Stack>
+
+        <Box as="form" onSubmit={handleSubmit}>
+          <FormControl id="email" isRequired>
+            <FormLabel>Correo electrónico</FormLabel>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@email.com"
+            />
+          </FormControl>
+
+          <Button
+            mt={6}
+            colorScheme="blue"
+            type="submit"
+            width="full"
+            isLoading={isLoading}
+          >
+            Enviar enlace de recuperación
+          </Button>
+        </Box>
+
+        <Box textAlign="center">
+          <Button
+            variant="link"
+            onClick={() => navigate("/login")}
+            colorScheme="blue"
+          >
+            Volver a iniciar sesión
+          </Button>
+        </Box>
+      </VStack>
     </Container>
   );
 };

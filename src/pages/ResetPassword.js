@@ -1,118 +1,148 @@
-// src/pages/ResetPassword.js
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  Box, Button, Container, FormControl, FormLabel, Input,
-  Stack, Heading, Text, useColorModeValue, FormErrorMessage, Alert, AlertIcon, AlertDescription
-} from '@chakra-ui/react';
-import { supabase } from '../services/supabaseClient';
-import { useNavigate } from 'react-router-dom';
+  Box,
+  Button,
+  Container,
+  FormControl,
+  FormLabel,
+  FormHelperText,
+  Heading,
+  Input,
+  InputGroup,
+  InputRightElement,
+  Text,
+  useToast,
+  VStack,
+} from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 
 const ResetPassword = () => {
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [formError, setFormError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
+  const toast = useToast();
+
+  const toggleShowPassword = () => setShowPassword(!showPassword);
+
+  const validatePasswords = () => {
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres");
+      return false;
+    }
+    
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return false;
+    }
+    
+    setError("");
+    return true;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError('');
-    setSuccessMessage('');
-
-    if (newPassword !== confirmPassword) {
-      setFormError('Las contraseñas no coinciden.');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setFormError('La contraseña debe tener al menos 6 caracteres.');
-      return;
-    }
-
+    
+    if (!validatePasswords()) return;
+    
+    setIsLoading(true);
+    
     try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.updateUser({
-        password: newPassword,
+      // Eliminamos la variable data que no se usaba
+      const { error: resetError } = await supabase.auth.updateUser({
+        password: password,
       });
 
-      if (error) {
-        setFormError(error.message);
-      } else {
-        setSuccessMessage('Contraseña actualizada exitosamente.');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      }
-    } catch (err) {
-      setFormError('Error al actualizar la contraseña.');
+      if (resetError) throw resetError;
+
+      toast({
+        title: "Contraseña actualizada",
+        description: "Tu contraseña ha sido actualizada exitosamente.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      // Usamos navigate para redirigir después de restablecer la contraseña
+      navigate("/login");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Ha ocurrido un error al restablecer la contraseña",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <Container maxW="md" py={12}>
-      <Stack spacing={8}>
-        <Stack textAlign="center">
-          <Heading>Restablece tu contraseña</Heading>
-          <Text color={textColor}>
-            Introduce una nueva contraseña segura.
+    <Container maxW="lg" py={12}>
+      <VStack spacing={8} align="stretch">
+        <Box textAlign="center">
+          <Heading as="h1" size="xl">
+            Restablecer contraseña
+          </Heading>
+          <Text mt={4}>
+            Introduce tu nueva contraseña.
           </Text>
-        </Stack>
-
-        {formError && (
-          <Alert status="error" borderRadius="md">
-            <AlertIcon />
-            <AlertDescription>{formError}</AlertDescription>
-          </Alert>
-        )}
-
-        {successMessage && (
-          <Alert status="success" borderRadius="md">
-            <AlertIcon />
-            <AlertDescription>{successMessage}</AlertDescription>
-          </Alert>
-        )}
-
-        <Box p={8} bg={cardBg} rounded="lg" shadow="md">
-          <form onSubmit={handleSubmit}>
-            <Stack spacing={4}>
-              <FormControl isInvalid={!!formError}>
-                <FormLabel>Nueva contraseña</FormLabel>
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </FormControl>
-
-              <FormControl isInvalid={!!formError}>
-                <FormLabel>Confirmar nueva contraseña</FormLabel>
-                <Input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </FormControl>
-
-              <Button
-                type="submit"
-                colorScheme="blue"
-                isLoading={loading}
-                loadingText="Guardando"
-              >
-                Actualizar Contraseña
-              </Button>
-            </Stack>
-          </form>
         </Box>
-      </Stack>
+
+        <Box as="form" onSubmit={handleSubmit}>
+          <VStack spacing={4}>
+            <FormControl id="password" isRequired>
+              <FormLabel>Nueva contraseña</FormLabel>
+              <InputGroup>
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Nueva contraseña"
+                />
+                <InputRightElement width="4.5rem">
+                  <Button h="1.75rem" size="sm" onClick={toggleShowPassword}>
+                    {showPassword ? "Ocultar" : "Mostrar"}
+                  </Button>
+                </InputRightElement>
+              </InputGroup>
+              <FormHelperText>
+                La contraseña debe tener al menos 6 caracteres.
+              </FormHelperText>
+            </FormControl>
+
+            <FormControl id="confirmPassword" isRequired>
+              <FormLabel>Confirmar contraseña</FormLabel>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirmar contraseña"
+              />
+            </FormControl>
+
+            {error && (
+              <Text color="red.500" fontSize="sm">
+                {error}
+              </Text>
+            )}
+
+            <Button
+              mt={6}
+              colorScheme="blue"
+              type="submit"
+              width="full"
+              isLoading={isLoading}
+            >
+              Restablecer contraseña
+            </Button>
+          </VStack>
+        </Box>
+      </VStack>
     </Container>
   );
 };
