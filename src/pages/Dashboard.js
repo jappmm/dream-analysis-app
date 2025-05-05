@@ -1,80 +1,60 @@
-// src/pages/Dashboard.js
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { Box, Button, Container, Heading, Text, VStack } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Heading,
-  Text,
-  VStack,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
-  useColorModeValue,
-  Icon,
-} from '@chakra-ui/react';
-import { FaCloudMoon, FaUser, FaRegCalendarAlt } from 'react-icons/fa';
-import { supabase } from '../services/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
+  const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
-  const bg = useColorModeValue('gray.100', 'gray.700');
 
-  const stats = [
-    {
-      label: 'Sueños Registrados',
-      value: 24,
-      icon: FaCloudMoon,
-    },
-    {
-      label: 'Días Activo',
-      value: 12,
-      icon: FaRegCalendarAlt,
-    },
-    {
-      label: 'Perfil Completo',
-      value: 'Sí',
-      icon: FaUser,
-    },
-  ];
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (!data?.user || error) {
-        navigate('/login'); // Si no hay usuario, redirige
-      } else {
-        setUser(data.user);
-      }
-    };
-
-    checkUser();
-  }, [navigate]);
-
-  if (!user) {
-    return <Text textAlign="center" mt={20}>Cargando...</Text>;
-  }
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   return (
-    <Box p={8}>
-      <Heading mb={4}>Bienvenido al Panel</Heading>
-      <Text color="gray.500" mb={8}>
-        Aquí puedes ver un resumen de tu actividad reciente.
-      </Text>
+    <Container maxW="container.lg" py={10}>
+      <VStack spacing={8} align="stretch">
+        <Box textAlign="center">
+          <Heading as="h1" size="xl" mb={4}>
+            Dashboard
+          </Heading>
+          <Text fontSize="lg">
+            Bienvenido, {user?.email || 'Usuario'}
+          </Text>
+        </Box>
 
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-        {stats.map((stat, index) => (
-          <Stat key={index} p={4} shadow="md" borderWidth="1px" borderRadius="lg" bg={bg}>
-            <VStack spacing={3}>
-              <Icon as={stat.icon} boxSize={6} color="teal.500" />
-              <StatLabel>{stat.label}</StatLabel>
-              <StatNumber>{stat.value}</StatNumber>
-            </VStack>
-          </Stat>
-        ))}
-      </SimpleGrid>
-    </Box>
+        <Box p={6} bg="gray.50" borderRadius="md">
+          <Heading as="h2" size="md" mb={4}>
+            Tus sueños recientes
+          </Heading>
+          <Text color="gray.600">
+            Aún no has registrado ningún sueño. ¡Comienza a registrar tus sueños para obtener análisis!
+          </Text>
+        </Box>
+
+        <Box display="flex" justifyContent="center">
+          <Button
+            colorScheme="brand"
+            size="lg"
+            onClick={() => navigate('/register-dream')}
+          >
+            Registrar un nuevo sueño
+          </Button>
+        </Box>
+
+        <Box textAlign="center" mt={8}>
+          <Button
+            variant="outline"
+            colorScheme="brand"
+            onClick={handleLogout}
+            isLoading={loading}
+          >
+            Cerrar sesión
+          </Button>
+        </Box>
+      </VStack>
+    </Container>
   );
 };
 

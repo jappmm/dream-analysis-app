@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -12,14 +12,18 @@ import {
   Text,
   VStack,
   FormErrorMessage,
+  useToast,
 } from '@chakra-ui/react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { signUp, loading } = useAuth();
+  const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,13 +33,30 @@ const Register = () => {
       return;
     }
     
-    setIsLoading(true);
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
     
-    // Simulamos un proceso de registro
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('Funcionalidad de registro aún no implementada');
-    }, 1000);
+    setError('');
+    
+    try {
+      const { error: signUpError } = await signUp(email, password);
+      
+      if (signUpError) throw signUpError;
+      
+      toast({
+        title: 'Cuenta creada',
+        description: 'Se ha enviado un correo de confirmación a tu dirección de email.',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
+      
+      navigate('/login');
+    } catch (error) {
+      setError(error.message || 'Error al crear la cuenta');
+    }
   };
 
   return (
@@ -88,7 +109,7 @@ const Register = () => {
               type="submit"
               width="full"
               mt={4}
-              isLoading={isLoading}
+              isLoading={loading}
             >
               Registrarse
             </Button>

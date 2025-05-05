@@ -1,111 +1,87 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from '@chakra-ui/react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { supabase } from '../services/supabaseClient';
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const toast = useToast();
 
-  // Comprobar si hay un usuario guardado en localStorage al iniciar
   useEffect(() => {
-    const storedUser = localStorage.getItem('dream_analysis_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Verificar si hay una sesión activa al cargar la aplicación
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+      setLoading(false);
+      
+      // Configurar listener para cambios en autenticación
+      const { data: { subscription } } = await supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          setUser(session?.user || null);
+        }
+      );
+
+      return () => subscription.unsubscribe();
+    };
+
+    getSession();
   }, []);
 
-  // Función simplificada de login - acepta cualquier credencial
-  const login = async (email, password) => {
-    try {
-      // Simular un retraso
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Crear un usuario simulado
-      const userData = {
-        id: 'user_' + Date.now(),
-        name: email.split('@')[0],
-        email: email,
-        createdAt: new Date().toISOString()
-      };
-      
-      // Guardar en localStorage
-      localStorage.setItem('dream_analysis_user', JSON.stringify(userData));
-      localStorage.setItem('dream_analysis_token', 'fake_token_' + Date.now());
-      
-      // Actualizar estado
-      setUser(userData);
-      
-      if (toast) {
-        toast({
-          title: 'Sesión iniciada',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error en login:', error);
-      
-      if (toast) {
-        toast({
-          title: 'Error al iniciar sesión',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-      
-      return false;
-    }
+  // Función para registrar un nuevo usuario
+  const signUp = async (email, password) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    setLoading(false);
+    return { data, error };
   };
 
-  // Función de logout modificada para no redirigir automáticamente
-  const logout = () => {
-    localStorage.removeItem('dream_analysis_user');
-    localStorage.removeItem('dream_analysis_token');
-    setUser(null);
-    
-    if (toast) {
-      toast({
-        title: 'Sesión cerrada',
-        status: 'info',
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-    
-    // No redirigir aquí, el sistema de rutas se encargará de esto
+  // Función para iniciar sesión
+  const signIn = async (email, password) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    return { data, error };
   };
 
-  // Verificar si el usuario está autenticado
-  const isAuthenticated = () => {
-    return !!user;
+  // Función para cerrar sesión
+  const signOut = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signOut();
+    setLoading(false);
+    return { error };
   };
 
-  return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      login,
-      logout,
-      isAuthenticated: isAuthenticated()
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  // Función para restablecer contraseña
+  const resetPassword = async (email) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/reset-password',
+    });
+    setLoading(false);
+    return { data, error };
+  };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth debe usarse dentro de un AuthProvider');
-  }
-  return context;
-};
+  // Función para actualizar contraseña
+  const updatePassword = async (password) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.updateUser({ password });
+    setLoading(false);
+    return { data, error };
+  };
 
-export default AuthContext;
+  const value = {
+    user,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword,
+    updatePassword,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
+}

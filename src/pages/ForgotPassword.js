@@ -12,20 +12,25 @@ import {
   Text,
   VStack,
   useToast,
+  FormErrorMessage,
 } from '@chakra-ui/react';
+import { useAuth } from '../contexts/AuthContext';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { resetPassword, loading } = useAuth();
   const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    // Simulamos un proceso de recuperación de contraseña
-    setTimeout(() => {
-      setIsLoading(false);
+    setError('');
+    
+    try {
+      const { error: resetError } = await resetPassword(email);
+      
+      if (resetError) throw resetError;
+      
       toast({
         title: 'Correo enviado',
         description: 'Se ha enviado un enlace para restablecer tu contraseña.',
@@ -33,7 +38,9 @@ const ForgotPassword = () => {
         duration: 5000,
         isClosable: true,
       });
-    }, 1000);
+    } catch (error) {
+      setError(error.message || 'Error al enviar el correo de recuperación');
+    }
   };
 
   return (
@@ -50,7 +57,7 @@ const ForgotPassword = () => {
 
         <Box as="form" onSubmit={handleSubmit}>
           <VStack spacing={4}>
-            <FormControl id="email" isRequired>
+            <FormControl id="email" isRequired isInvalid={error !== ''}>
               <FormLabel>Correo electrónico</FormLabel>
               <Input
                 type="email"
@@ -58,6 +65,7 @@ const ForgotPassword = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tu@email.com"
               />
+              {error && <FormErrorMessage>{error}</FormErrorMessage>}
             </FormControl>
 
             <Button
@@ -65,7 +73,7 @@ const ForgotPassword = () => {
               type="submit"
               width="full"
               mt={4}
-              isLoading={isLoading}
+              isLoading={loading}
             >
               Enviar enlace de recuperación
             </Button>

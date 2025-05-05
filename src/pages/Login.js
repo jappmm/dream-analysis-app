@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -12,23 +12,39 @@ import {
   Text,
   VStack,
   FormErrorMessage,
+  useToast,
 } from '@chakra-ui/react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { signIn, loading } = useAuth();
+  const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    setError('');
     
-    // Simulamos un proceso de inicio de sesión
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('Funcionalidad de inicio de sesión aún no implementada');
-    }, 1000);
+    try {
+      const { error: signInError } = await signIn(email, password);
+      
+      if (signInError) throw signInError;
+      
+      toast({
+        title: 'Inicio de sesión exitoso',
+        description: 'Bienvenido de nuevo.',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      
+      navigate('/dashboard');
+    } catch (error) {
+      setError(error.message || 'Error al iniciar sesión');
+    }
   };
 
   return (
@@ -55,7 +71,7 @@ const Login = () => {
               />
             </FormControl>
 
-            <FormControl id="password" isRequired>
+            <FormControl id="password" isRequired isInvalid={error !== ''}>
               <FormLabel>Contraseña</FormLabel>
               <Input
                 type="password"
@@ -63,20 +79,15 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Tu contraseña"
               />
+              {error && <FormErrorMessage>{error}</FormErrorMessage>}
             </FormControl>
-
-            {error && (
-              <Text color="red.500" fontSize="sm">
-                {error}
-              </Text>
-            )}
 
             <Button
               colorScheme="brand"
               type="submit"
               width="full"
               mt={4}
-              isLoading={isLoading}
+              isLoading={loading}
             >
               Iniciar sesión
             </Button>
