@@ -1,24 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import './index.css';
 import App from './App';
-import { AuthProvider } from './contexts/AuthContext';
-import { DreamProvider } from './contexts/DreamContext';
-import { ChakraProvider } from '@chakra-ui/react';
-import './assets/styles/index.css';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+console.log("Iniciando aplicación React");
 
-root.render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <ChakraProvider>
-        <AuthProvider>
-          <DreamProvider>
-            <App />
-          </DreamProvider>
-        </AuthProvider>
-      </ChakraProvider>
-    </BrowserRouter>
-  </React.StrictMode>
-);
+try {
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  console.log("Root element found:", document.getElementById('root'));
+  
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+  console.log("Render completado");
+} catch (error) {
+  console.error("Error al renderizar la aplicación:", error);
+}
