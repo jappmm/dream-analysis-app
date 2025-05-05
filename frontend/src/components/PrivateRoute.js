@@ -1,26 +1,23 @@
+// src/components/PrivateRoute.js
 import React from 'react';
-import { Route, Navigate } from 'react-router-dom'; // Actualización: importar Navigate
-import { useAuth } from '../contexts/AuthContext';
+import { Navigate, Outlet } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
 
-const PrivateRoute = ({ element: Component, ...rest }) => {
+
+const PrivateRoute = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>; // O puedes agregar un spinner o cualquier otra cosa mientras carga
+    return <div>Cargando...</div>; // O puedes poner un spinner bonito aquí
   }
 
-  return (
-    <Route
-      {...rest}
-      element={
-        user ? (
-          Component
-        ) : (
-          <Navigate to="/login" /> // Usamos Navigate en lugar de Redirect
-        )
-      }
-    />
-  );
+  // Si el usuario no está autenticado, redirige a login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Si el usuario está autenticado, muestra el contenido protegido
+  return <Outlet />;
 };
 
 export default PrivateRoute;

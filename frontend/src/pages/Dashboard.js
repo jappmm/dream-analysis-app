@@ -1,5 +1,6 @@
 // src/pages/Dashboard.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Heading,
@@ -10,11 +11,14 @@ import {
   StatLabel,
   StatNumber,
   useColorModeValue,
+  Icon,
 } from '@chakra-ui/react';
 import { FaCloudMoon, FaUser, FaRegCalendarAlt } from 'react-icons/fa';
-import { Icon } from '@chakra-ui/icons';
+import { supabase } from '../services/supabase';
 
 const Dashboard = () => {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
   const bg = useColorModeValue('gray.100', 'gray.700');
 
   const stats = [
@@ -34,6 +38,23 @@ const Dashboard = () => {
       icon: FaUser,
     },
   ];
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (!data?.user || error) {
+        navigate('/login'); // Si no hay usuario, redirige
+      } else {
+        setUser(data.user);
+      }
+    };
+
+    checkUser();
+  }, [navigate]);
+
+  if (!user) {
+    return <Text textAlign="center" mt={20}>Cargando...</Text>;
+  }
 
   return (
     <Box p={8}>
