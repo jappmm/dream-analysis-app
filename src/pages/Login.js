@@ -6,7 +6,7 @@ import {
   useColorModeValue, Icon, Alert, AlertIcon, AlertDescription
 } from '@chakra-ui/react';
 import { FaEye, FaEyeSlash, FaEnvelope } from 'react-icons/fa';
-import { supabase } from '../services/supabaseClient'; // ✅ Import correcto al nuevo cliente
+import { supabase } from '../services/supabase'; // IMPORTACIÓN CORRECTA
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -24,19 +24,10 @@ const Login = () => {
   const cardBg = useColorModeValue('white', 'gray.800');
   const textColor = useColorModeValue('gray.600', 'gray.400');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setServerError('');
-    setFormErrors((prev) => ({ ...prev, [name]: null }));
-
-    if (name === 'email') setEmail(value);
-    if (name === 'password') setPassword(value);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const errors = {};
+
     if (!email.trim()) errors.email = 'El correo electrónico es requerido';
     if (!password) errors.password = 'La contraseña es requerida';
 
@@ -88,12 +79,10 @@ const Login = () => {
                     type="email"
                     name="email"
                     value={email}
-                    onChange={handleChange}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="tu@correo.com"
                   />
-                  <InputRightElement>
-                    <Icon as={FaEnvelope} color="gray.400" />
-                  </InputRightElement>
+                  <InputRightElement><Icon as={FaEnvelope} color="gray.400" /></InputRightElement>
                 </InputGroup>
                 <FormErrorMessage>{formErrors.email}</FormErrorMessage>
               </FormControl>
@@ -105,7 +94,7 @@ const Login = () => {
                     type={showPassword ? 'text' : 'password'}
                     name="password"
                     value={password}
-                    onChange={handleChange}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                   />
                   <InputRightElement cursor="pointer" onClick={() => setShowPassword(!showPassword)}>
@@ -117,10 +106,7 @@ const Login = () => {
 
               <Stack spacing={10}>
                 <Stack direction={{ base: 'column', sm: 'row' }} align="start" justify="space-between">
-                  <Checkbox
-                    isChecked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  >
+                  <Checkbox isChecked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)}>
                     Recordarme
                   </Checkbox>
                   <Link as={RouterLink} to="/forgot-password" color="blue.400">

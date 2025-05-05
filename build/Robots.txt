@@ -1,0 +1,6 @@
+# Permite a todos los robots de búsqueda acceder a todo el sitio
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://tudominio.com/sitemap.xml
