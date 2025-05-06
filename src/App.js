@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 
 // Componente de carga
@@ -18,7 +19,7 @@ const LoadingFallback = () => (
   </Center>
 );
 
-// Componente de ruta protegida mejorado
+// Componente de ruta protegida
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
@@ -44,6 +45,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route 
           path="/dashboard" 
           element={

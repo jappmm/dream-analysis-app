@@ -1,45 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
   Container,
   FormControl,
   FormLabel,
-  FormHelperText,
   Heading,
   Input,
-  InputGroup,
-  InputRightElement,
+  Link,
   Text,
-  useToast,
   VStack,
-} from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
+  FormErrorMessage,
+  useToast,
+  Alert,
+  AlertIcon,
+} from '@chakra-ui/react';
+import { supabase } from '../services/supabaseClient';
 
 const ResetPassword = () => {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [hash, setHash] = useState('');
   const navigate = useNavigate();
   const toast = useToast();
 
-  const toggleShowPassword = () => setShowPassword(!showPassword);
+  // Extraer el hash de la URL cuando el componente se monta
+  useEffect(() => {
+    const hashFragment = window.location.hash;
+    if (hashFragment) {
+      setHash(hashFragment);
+    } else {
+      setError('No se encontró un token de restablecimiento válido en la URL.');
+    }
+  }, []);
 
   const validatePasswords = () => {
     if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
+      setError('La contraseña debe tener al menos 6 caracteres');
       return false;
     }
-    
+
     if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden");
+      setError('Las contraseñas no coinciden');
       return false;
     }
-    
-    setError("");
+
     return true;
   };
 
@@ -48,99 +56,98 @@ const ResetPassword = () => {
     
     if (!validatePasswords()) return;
     
-    setIsLoading(true);
+    setLoading(true);
+    setError('');
     
     try {
-      // Eliminamos la variable data que no se usaba
-      const { error: resetError } = await supabase.auth.updateUser({
-        password: password,
+      // Actualizar la contraseña del usuario
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password
       });
-
-      if (resetError) throw resetError;
-
+      
+      if (updateError) throw updateError;
+      
       toast({
-        title: "Contraseña actualizada",
-        description: "Tu contraseña ha sido actualizada exitosamente.",
-        status: "success",
+        title: 'Contraseña actualizada',
+        description: 'Tu contraseña ha sido actualizada exitosamente.',
+        status: 'success',
         duration: 5000,
         isClosable: true,
       });
       
-      // Usamos navigate para redirigir después de restablecer la contraseña
-      navigate("/login");
+      // Redirigir al inicio de sesión después de unos segundos
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      
     } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message || "Ha ocurrido un error al restablecer la contraseña",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+      console.error('Error al actualizar la contraseña:', error);
+      setError(error.message || 'Ocurrió un error al actualizar la contraseña');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <Container maxW="lg" py={12}>
+    <Container maxW="container.sm" py={10}>
       <VStack spacing={8} align="stretch">
         <Box textAlign="center">
-          <Heading as="h1" size="xl">
+          <Heading as="h1" size="xl" mb={2}>
             Restablecer contraseña
           </Heading>
-          <Text mt={4}>
-            Introduce tu nueva contraseña.
+          <Text color="gray.600">
+            Introduce tu nueva contraseña para restablecer tu cuenta
           </Text>
         </Box>
+
+        {error && (
+          <Alert status="error">
+            <AlertIcon />
+            {error}
+          </Alert>
+        )}
 
         <Box as="form" onSubmit={handleSubmit}>
           <VStack spacing={4}>
             <FormControl id="password" isRequired>
               <FormLabel>Nueva contraseña</FormLabel>
-              <InputGroup>
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Nueva contraseña"
-                />
-                <InputRightElement width="4.5rem">
-                  <Button h="1.75rem" size="sm" onClick={toggleShowPassword}>
-                    {showPassword ? "Ocultar" : "Mostrar"}
-                  </Button>
-                </InputRightElement>
-              </InputGroup>
-              <FormHelperText>
-                La contraseña debe tener al menos 6 caracteres.
-              </FormHelperText>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Introduce tu nueva contraseña"
+              />
             </FormControl>
 
-            <FormControl id="confirmPassword" isRequired>
+            <FormControl id="confirmPassword" isRequired isInvalid={error.includes('coinciden')}>
               <FormLabel>Confirmar contraseña</FormLabel>
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirmar contraseña"
+                placeholder="Confirma tu nueva contraseña"
               />
+              {error.includes('coinciden') && (
+                <FormErrorMessage>{error}</FormErrorMessage>
+              )}
             </FormControl>
 
-            {error && (
-              <Text color="red.500" fontSize="sm">
-                {error}
-              </Text>
-            )}
-
             <Button
-              mt={6}
-              colorScheme="blue"
+              colorScheme="brand"
               type="submit"
               width="full"
-              isLoading={isLoading}
+              mt={4}
+              isLoading={loading}
             >
               Restablecer contraseña
             </Button>
           </VStack>
+        </Box>
+
+        <Box textAlign="center">
+          <Link href="/login" color="brand.500">
+            Volver a inicio de sesión
+          </Link>
         </Box>
       </VStack>
     </Container>
