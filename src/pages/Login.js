@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -13,6 +13,9 @@ import {
   VStack,
   FormErrorMessage,
   useToast,
+  Alert,
+  AlertIcon,
+  AlertDescription,
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -20,30 +23,52 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { signIn, loading } = useAuth();
+  const { signIn, loading, user, authError } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
+
+  // Efecto para redirigir si el usuario ya está autenticado
+  useEffect(() => {
+    if (user) {
+      console.log('User already logged in, redirecting to dashboard');
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
+    if (!email || !password) {
+      setError('Por favor ingresa email y contraseña');
+      return;
+    }
+    
     try {
+      console.log('Attempting login with:', email);
       const { error: signInError } = await signIn(email, password);
       
-      if (signInError) throw signInError;
+      if (signInError) {
+        console.error('Login component error:', signInError);
+        throw signInError;
+      }
       
       toast({
         title: 'Inicio de sesión exitoso',
-        description: 'Bienvenido de nuevo.',
+        description: 'Redirigiendo al dashboard...',
         status: 'success',
         duration: 3000,
         isClosable: true,
       });
       
-      navigate('/dashboard');
+      // Esperar un momento antes de redirigir para permitir que se actualice el estado
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     } catch (error) {
-      setError(error.message || 'Error al iniciar sesión');
+      const errorMessage = error.message || 'Error al iniciar sesión';
+      console.error('Login submission error:', errorMessage);
+      setError(errorMessage);
     }
   };
 
@@ -58,6 +83,13 @@ const Login = () => {
             Ingresa tus credenciales para acceder a tu cuenta
           </Text>
         </Box>
+
+        {authError && (
+          <Alert status="error">
+            <AlertIcon />
+            <AlertDescription>{authError}</AlertDescription>
+          </Alert>
+        )}
 
         <Box as="form" onSubmit={handleSubmit}>
           <VStack spacing={4}>

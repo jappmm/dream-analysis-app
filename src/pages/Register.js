@@ -13,6 +13,9 @@ import {
   VStack,
   FormErrorMessage,
   useToast,
+  Alert,
+  AlertIcon,
+  AlertDescription,
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -21,7 +24,7 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { signUp, loading } = useAuth();
+  const { signUp, loading, authError } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -41,9 +44,13 @@ const Register = () => {
     setError('');
     
     try {
+      console.log('Attempting signup with:', email);
       const { error: signUpError } = await signUp(email, password);
       
-      if (signUpError) throw signUpError;
+      if (signUpError) {
+        console.error('Signup component error:', signUpError);
+        throw signUpError;
+      }
       
       toast({
         title: 'Cuenta creada',
@@ -55,7 +62,9 @@ const Register = () => {
       
       navigate('/login');
     } catch (error) {
-      setError(error.message || 'Error al crear la cuenta');
+      const errorMessage = error.message || 'Error al crear la cuenta';
+      console.error('Signup submission error:', errorMessage);
+      setError(errorMessage);
     }
   };
 
@@ -70,6 +79,13 @@ const Register = () => {
             Crea una cuenta para comenzar a analizar tus sueños
           </Text>
         </Box>
+
+        {authError && (
+          <Alert status="error">
+            <AlertIcon />
+            <AlertDescription>{authError}</AlertDescription>
+          </Alert>
+        )}
 
         <Box as="form" onSubmit={handleSubmit}>
           <VStack spacing={4}>
@@ -89,7 +105,7 @@ const Register = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tu contraseña"
+                placeholder="Tu contraseña (mínimo 6 caracteres)"
               />
             </FormControl>
 
