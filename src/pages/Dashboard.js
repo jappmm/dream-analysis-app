@@ -27,20 +27,26 @@ const Dashboard = () => {
     try {
       if (!user) return;
 
+      console.log('Obteniendo sueños para el usuario:', user.id);
+      
       const { data, error } = await supabase
-        .from('Dreams')
+        .from('Dreama')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error al obtener sueños:', error);
+        throw error;
+      }
       
+      console.log('Sueños obtenidos:', data);
       setDreams(data || []);
     } catch (error) {
-      console.error('Error al obtener sueños:', error);
+      console.error('Error detallado al obtener sueños:', error);
       toast({
         title: 'Error',
-        description: 'No se pudieron cargar tus sueños',
+        description: 'No se pudieron cargar tus sueños: ' + (error.message || 'Error desconocido'),
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -85,8 +91,15 @@ const Dashboard = () => {
     }
     
     try {
+      console.log('Intentando guardar sueño:', {
+        title: newDream.title,
+        content: newDream.content,
+        dream_date: newDream.date,
+        user_id: user.id
+      });
+      
       const { data, error } = await supabase
-        .from('Dreams')
+        .from('Dreama')
         .insert([
           {
             title: newDream.title,
@@ -97,7 +110,12 @@ const Dashboard = () => {
         ])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error detallado de Supabase:', error);
+        throw error;
+      }
+      
+      console.log('Sueño guardado exitosamente:', data);
       
       toast({
         title: 'Sueño registrado',
@@ -127,7 +145,7 @@ const Dashboard = () => {
       console.error('Error al guardar el sueño:', error);
       toast({
         title: 'Error',
-        description: 'No se pudo guardar tu sueño',
+        description: `No se pudo guardar tu sueño: ${error.message || 'Error desconocido'}`,
         status: 'error',
         duration: 5000,
         isClosable: true,
