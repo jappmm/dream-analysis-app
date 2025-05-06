@@ -1,6 +1,8 @@
+// src/App.js
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { DreamProvider } from './contexts/DreamContext';
 import { Box, Spinner, Center, Text } from '@chakra-ui/react';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -8,12 +10,15 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
+import Analysis from './pages/Analysis';
+import AnalysisDetail from './pages/AnalysisDetail';
+import DreamDetail from './pages/DreamDetail';
 
 // Componente de carga
 const LoadingFallback = () => (
   <Center h="100vh">
     <Box textAlign="center">
-      <Spinner size="xl" color="brand.500" thickness="4px" speed="0.65s" />
+      <Spinner size="xl" color="teal.500" thickness="4px" speed="0.65s" />
       <Text mt={4}>Cargando...</Text>
     </Box>
   </Center>
@@ -23,18 +28,15 @@ const LoadingFallback = () => (
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
   
-  console.log('PrivateRoute - User:', user, 'Loading:', loading);
-  
   if (loading) {
     return <LoadingFallback />;
   }
   
   if (!user) {
-    console.log('No user found, redirecting to login');
     return <Navigate to="/login" />;
   }
   
-  return children;
+  return <DreamProvider>{children}</DreamProvider>;
 };
 
 function App() {
@@ -46,6 +48,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        
+        {/* Rutas protegidas */}
         <Route 
           path="/dashboard" 
           element={
@@ -54,6 +58,31 @@ function App() {
             </PrivateRoute>
           } 
         />
+        <Route 
+          path="/analysis" 
+          element={
+            <PrivateRoute>
+              <Analysis />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/analysis/:dreamId" 
+          element={
+            <PrivateRoute>
+              <AnalysisDetail />
+            </PrivateRoute>
+          } 
+        />
+        <Route 
+          path="/dream/:dreamId" 
+          element={
+            <PrivateRoute>
+              <DreamDetail />
+            </PrivateRoute>
+          } 
+        />
+        
         {/* Redirigir rutas desconocidas a la página principal */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

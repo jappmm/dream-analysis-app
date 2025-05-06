@@ -1,24 +1,30 @@
 // src/components/analysis/InsightCard.js
 import React from 'react';
-import { Box, Heading, Text, useColorModeValue } from '@chakra-ui/react';
+import { Box, Text, Icon, useColorModeValue } from '@chakra-ui/react';
+import { FaLightbulb } from 'react-icons/fa';
 
-const InsightCard = ({ title, description }) => {
-  const bg = useColorModeValue('white', 'gray.700');
-  const border = useColorModeValue('gray.200', 'gray.600');
-
+const InsightCard = ({ insight }) => {
+  const bgColor = useColorModeValue('white', 'gray.800');
+  
   return (
-    <Box
-      p={5}
-      shadow="md"
+    <Box 
+      p={4} 
+      borderRadius="lg" 
+      boxShadow="sm"
+      bg={bgColor}
       borderWidth="1px"
-      borderColor={border}
-      borderRadius="xl"
-      bg={bg}
+      borderColor="yellow.100"
+      _hover={{
+        boxShadow: "md",
+        borderColor: "yellow.200"
+      }}
+      transition="all 0.2s"
     >
-      <Heading fontSize="lg" mb={2}>
-        {title}
-      </Heading>
-      <Text fontSize="sm">{description}</Text>
+      <Box display="flex" alignItems="center" mb={3}>
+        <Icon as={FaLightbulb} color="yellow.400" mr={2} />
+        <Text fontWeight="medium">Insight</Text>
+      </Box>
+      <Text>{insight}</Text>
     </Box>
   );
 };
